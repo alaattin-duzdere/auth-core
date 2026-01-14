@@ -7,6 +7,7 @@ import com.authcore.property.AuthProperties;
 import com.authcore.context.AuthUserProvider;
 import com.authcore.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -55,8 +57,8 @@ public class AuthCoreAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, AuthUserProvider authUserProvider) {
-        return new JwtAuthenticationFilter(jwtService, authUserProvider);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, AuthUserProvider authUserProvider,@Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+        return new JwtAuthenticationFilter(jwtService, authUserProvider, exceptionResolver);
     }
 
     @Bean
