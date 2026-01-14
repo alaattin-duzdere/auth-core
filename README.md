@@ -139,3 +139,22 @@ public class AuthController {
     }
 }
 ```
+
+
+## 🧩 Customization & Bean Overriding
+
+AuthCore is flexible. It uses Spring's `@ConditionalOnMissingBean` annotation internally. This means you can override the default behavior simply by defining your own beans in your application context.
+
+### Example: Changing Password Encoder
+By default, AuthCore uses **BCrypt**. If you prefer a different algorithm (e.g., Argon2 or SCrypt), just define a `PasswordEncoder` bean in your project configuration. AuthCore will automatically back off and use yours.
+
+```java
+@Configuration
+public class MySecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // Example: Using Argon2 instead of default BCrypt
+        return new Argon2PasswordEncoder(16, 32, 1, 65536, 3);
+    }
+}
