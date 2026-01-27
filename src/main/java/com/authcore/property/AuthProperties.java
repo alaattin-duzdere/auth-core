@@ -38,6 +38,11 @@ public class AuthProperties {
     private String headerString = "Authorization";
 
     /**
+     * Token'ı kimin oluşturduğu bilgisi (Issuer).
+     */
+    private String issuer;
+
+    /**
      * Login gerektirmeyen (herkese açık) URL listesi.
      * Örn: /auth/login, /auth/register, /swagger-ui/**
      */

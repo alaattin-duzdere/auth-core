@@ -13,6 +13,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @RequiredArgsConstructor
@@ -40,7 +41,9 @@ public class JwtService {
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
         return Jwts.builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername()) // Burası ID, Email veya Username olabilir.
+                .setSubject(userDetails.getUsername())
+                .setIssuer(authProperties.getIssuer())
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -77,5 +80,14 @@ public class JwtService {
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(authProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public long getRemainingExpirationMillis(String token) {
+        try {
+            Date expirationDate = extractClaim(token, Claims::getExpiration);
+            return Math.max(0,(expirationDate.getTime()-new Date().getTime()));
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
