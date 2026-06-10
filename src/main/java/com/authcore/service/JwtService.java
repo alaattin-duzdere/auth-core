@@ -8,10 +8,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import jakarta.annotation.PostConstruct;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;

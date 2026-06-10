@@ -2,13 +2,14 @@ package com.authcore;
 
 import com.authcore.context.OAuth2UserProcessor;
 import com.authcore.filter.JwtAuthenticationFilter;
+import com.authcore.handler.DelegatedAccessDeniedHandler;
+import com.authcore.handler.DelegatedAuthenticationEntryPoint;
 import com.authcore.handler.OAuth2SuccessHandler;
 import com.authcore.property.AuthProperties;
 import com.authcore.context.AuthUserProvider;
 import com.authcore.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -70,8 +71,24 @@ public class AuthCoreAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public DelegatedAuthenticationEntryPoint delegatedAuthenticationEntryPoint(
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+        return new DelegatedAuthenticationEntryPoint(exceptionResolver);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DelegatedAccessDeniedHandler delegatedAccessDeniedHandler(
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+        return new DelegatedAccessDeniedHandler(exceptionResolver);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationFilter jwtFilter,
+                                                   DelegatedAuthenticationEntryPoint authenticationEntryPoint,
+                                                   DelegatedAccessDeniedHandler accessDeniedHandler,
                                                    @Autowired(required = false) OAuth2SuccessHandler successHandler) throws Exception {
 
         http
@@ -79,6 +96,10 @@ public class AuthCoreAutoConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(authProperties.getWhitelist().toArray(new String[0])).permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
