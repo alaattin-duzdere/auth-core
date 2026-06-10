@@ -1,6 +1,7 @@
 package com.authcore.filter;
 
 import com.authcore.context.AuthUserProvider;
+import com.authcore.property.AuthProperties;
 import com.authcore.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,10 +14,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final AuthUserProvider authUserProvider;
     private final HandlerExceptionResolver exceptionResolver;
+    private final AuthProperties authProperties;
 
     @Override
     protected void doFilterInternal(
@@ -68,5 +72,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.error("JWT Filter Error: {}", e.getMessage());
             exceptionResolver.resolveException(request, response, null, e);
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@org.jspecify.annotations.NonNull HttpServletRequest request) throws ServletException {
+        AntPathMatcher pathMatcher = new AntPathMatcher();
+        String path = request.getServletPath();
+
+        String[] patterns = new String[0];
+        if (authProperties != null && authProperties.getWhitelist() != null) {
+            patterns = authProperties.getWhitelist().toArray(new String[0]);
+        }
+
+        boolean shouldNotFilter = Arrays.stream(patterns)
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
+
+        if (shouldNotFilter) {
+            log.trace("Skipping JWT filter for public path: {}", path);
+        }
+
+        return shouldNotFilter;
     }
 }

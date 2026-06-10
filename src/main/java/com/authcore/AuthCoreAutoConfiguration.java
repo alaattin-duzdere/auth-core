@@ -57,8 +57,8 @@ public class AuthCoreAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, AuthUserProvider authUserProvider,@Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
-        return new JwtAuthenticationFilter(jwtService, authUserProvider, exceptionResolver);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, AuthUserProvider authUserProvider, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver, AuthProperties properties) {
+        return new JwtAuthenticationFilter(jwtService, authUserProvider, exceptionResolver, properties);
     }
 
     @Bean
