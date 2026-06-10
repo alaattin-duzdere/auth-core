@@ -6,7 +6,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
+import java.nio.charset.StandardCharsets;
+import jakarta.annotation.PostConstruct;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.Key;
@@ -16,10 +19,32 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-@RequiredArgsConstructor
+@Slf4j
 public class JwtService {
 
     private final AuthProperties authProperties;
+    private Key signInKey;
+
+    public JwtService(AuthProperties authProperties) {
+        this.authProperties = authProperties;
+    }
+
+    @PostConstruct
+    public void init() {
+        String raw = authProperties.getSecretKey();
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("auth-core.secretKey must be provided and non-empty");
+        }
+
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(raw);
+            this.signInKey = Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            log.debug("Secret is not valid base64, falling back to raw UTF-8 bytes");
+            byte[] keyBytes = raw.getBytes(StandardCharsets.UTF_8);
+            this.signInKey = Keys.hmacShaKeyFor(keyBytes);
+        }
+    }
 
     public String extractIdentifier(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -78,8 +103,7 @@ public class JwtService {
      * Konfigürasyondaki Secret Key'i şifreleme anahtarına dönüştürür.
      */
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(authProperties.getSecretKey());
-        return Keys.hmacShaKeyFor(keyBytes);
+        return this.signInKey;
     }
 
     public long getRemainingExpirationMillis(String token) {
